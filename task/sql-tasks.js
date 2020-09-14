@@ -274,12 +274,11 @@ async function task_1_12(db) {
  */
 async function task_1_13(db) {
     let result = await db.query(`
-        SELECT
-            COUNT(ProductID) AS 'TotalOfCurrentProducts',
-            COUNT(IF(Discontinued, 1, NULL)) AS 'TotalOfDiscontinuedProducts'
-        FROM Products
-    `)
-    return result[0]
+    SELECT
+        (SELECT COUNT(ProductID) FROM Products) as 'TotalOfCurrentProducts',
+        (SELECT COUNT(IF(Discontinued, 1, NULL)) FROM Products) as 'TotalOfDiscontinuedProducts'        
+`)
+return result[0]
 }
 
 /**
@@ -466,24 +465,24 @@ async function task_1_21(db) {
  */
 async function task_1_22(db) {
     let result = await db.query(`
+    SELECT DISTINCT
+        Customers.CompanyName AS 'CompanyName',
+        Products.ProductName AS 'ProductName',
+        OrderDetails.UnitPrice AS 'PricePerItem'
+    FROM Customers 
+    JOIN Orders ON Customers.CustomerId = Orders.CustomerId
+    JOIN OrderDetails ON Orders.OrderId = OrderDetails.OrderId
+    JOIN Products ON OrderDetails.ProductId = Products.ProductId 
+    JOIN(
         SELECT
-            cust.CompanyName AS 'CompanyName',
-            prod.ProductName AS 'ProductName',
-            ordet.UnitPrice AS 'PricePerItem'
-        FROM Customers AS cust
-        INNER JOIN Orders AS ord ON ord.CustomerID = cust.CustomerID
-        INNER JOIN OrderDetails AS ordet ON ordet.OrderID = ord.OrderID
-        INNER JOIN Products AS prod ON prod.ProductID = ordet.ProductID
-        WHERE ordet.UnitPrice = (
-            SELECT
-                MAX(ordet1.UnitPrice)
-            FROM Customers AS cust1
-            INNER JOIN Orders AS ord1 ON ord1.CustomerID = cust1.CustomerID
-            INNER JOIN OrderDetails AS ordet1 ON ordet1.OrderID = ord1.OrderID
-            WHERE cust.CustomerID = cust1.CustomerID 
-        )
-        GROUP BY PricePerItem, CompanyName, ProductName
-        ORDER BY PricePerItem DESC, CompanyName, ProductName
+            Customers.CustomerId,
+            MAX(OrderDetails.UnitPrice) AS PricePerItem
+        FROM Customers 
+        INNER JOIN Orders ON Orders.CustomerID = Customers.CustomerID
+        INNER JOIN OrderDetails ON OrderDetails.OrderID = Orders.OrderID
+        GROUP BY CustomerId
+    ) AS subquery ON Customers.CustomerId = subquery.CustomerId AND OrderDetails.UnitPrice = subquery.PricePerItem  
+    ORDER BY PricePerItem DESC, CompanyName, ProductName
     `)
     return result[0]
 }
