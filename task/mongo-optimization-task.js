@@ -15,8 +15,8 @@ const ObjectId = require('mongodb').ObjectID;
  * Test timeout is increased to 60sec for the function.
  * */
 async function before(db) {
-    await db.collection('opportunities').createIndex({'initiativeId': 1, 'contacts': 1, 'clientID': 1 });
-    await db.collection('clientCriteria').createIndex({'value': 1,'clientID': 1,'versions': 1,'shortLabel': 1});
+    await db.collection('opportunities').createIndex({'initiativeId': 1});
+    await db.collection('clientCriteria').createIndex({'value': 1});
 }
 
 /**
